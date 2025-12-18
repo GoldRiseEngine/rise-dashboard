@@ -6,114 +6,201 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <title>Rise Trading Dashboard</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
             color: #fff;
             padding: 20px;
         }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .header h1 {
             font-size: 2.2rem;
             font-style: italic;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: bold;
-            letter-spacing: 3px;
-            color: #fff;
-        }
-
-        .last-updated {
-            font-size: 0.85rem;
-            color: #888;
-            margin-bottom: 20px;
-        }
-
+        .logo-text { font-size: 1.5rem; font-weight: bold; letter-spacing: 3px; color: #fff; }
+        .last-updated { font-size: 0.85rem; color: #888; margin-bottom: 20px; }
         .card {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255,255,255,0.05);
             border-radius: 16px;
             padding: 25px;
             margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255,255,255,0.1);
         }
-
-        .card-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #667eea;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
+        .card-title { font-size: 1rem; font-weight: 600; color: #667eea; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
+        .stat-value { font-size: 1.8rem; font-weight: 700; }
         .stat-value.positive { color: #4ade80; }
         .stat-value.negative { color: #f87171; }
         .stat-value.neutral { color: #60a5fa; }
-
         .signal-row {
             display: grid;
             grid-template-columns: 100px 100px 80px 80px 1fr 120px;
             gap: 15px;
             padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255,255,255,0.03);
             border-radius: 8px;
             margin-bottom: 8px;
             align-items: center;
             cursor: pointer;
-            transition: background 0.2s;
         }
-
-        .signal-row:hover {
+        .signal-row:hover { background: rgba(255,255,255,0.08); }
+        .signal-id { font-weight: 600; color: #a78bfa; }
+        .signal-date { color: #888; font-size: 0.9rem; }
+        .signal-direction { font-weight: 600; }
+        .signal-direction.buy { color: #4ade80; }
+        .signal-direction.sell { color: #f87171; }
+        .signal-trades { color: #888; font-size: 0.9rem; }
+        .signal-result { display: flex; gap: 10px; font-size: 0.85rem; }
+        .signal-result .wins { color: #4ade80; }
+        .signal-result .losses { color: #f87171; }
+        .signal-pnl { font-weight: 700; text-align: right; }
+        .signal-pnl.positive { color: #4ade80; }
+        .signal-pnl.negative { color: #f87171; }
+        .expand-icon { margin-left: 5px; display: inline-block; }
+        .trades-detail { display: none; background: rgba(0,0,0,0.2); border-radius: 8px; margin: -4px 0 8px 0; padding: 15px; }
+        .trades-detail.expanded { display: block; }
+        .trade-row { display: grid; grid-template-columns: 80px 60px 80px 80px 80px 80px; gap: 10px; padding: 8px 10px; font-size: 0.8rem; color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .trade-row:last-child { border-bottom: none; }
+        .trade-row.header { color: #666; font-weight: 600; }
+        .no-signals { text-align: center; color: #666; padding: 30px; }
+        .show-more-btn { display: block; width: 100%; padding: 12px; margin-top: 10px; background: rgba(102,126,234,0.2); border: 1px solid rgba(102,126,234,0.4); border-radius: 8px; color: #667eea; font-size: 0.9rem; cursor: pointer; }
+        .show-more-btn:hover { background: rgba(102,126,234,0.3); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Rise Trading Dashboard</h1>
+            <div class="logo-text">RISE TRADING</div>
+        </div>
+        <div class="last-updated" id="lastUpdated">Loading...</div>
+        <div class="card">
+            <div class="card-title">Live Performance</div>
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-label">Total Signals</div><div class="stat-value neutral" id="totalSignals">-</div></div>
+                <div class="stat-item"><div class="stat-label">Wins</div><div class="stat-value positive" id="totalWins">-</div></div>
+                <div class="stat-item"><div class="stat-label">Losses</div><div class="stat-value negative" id="totalLosses">-</div></div>
+                <div class="stat-item"><div class="stat-label">Win Rate</div><div class="stat-value positive" id="winRate">-</div></div>
+            </div>
+            <div class="stats-grid" style="margin-top:20px">
+                <div class="stat-item"><div class="stat-label">Total P/L</div><div class="stat-value" id="totalPnL">-</div></div>
+                <div class="stat-item"><div class="stat-label">Avg Signal Win</div><div class="stat-value positive" id="avgWin">-</div></div>
+                <div class="stat-item"><div class="stat-label">Avg Signal Loss</div><div class="stat-value negative" id="avgLoss">-</div></div>
+                <div class="stat-item"><div class="stat-label">Total Trades</div><div class="stat-value neutral" id="totalTrades">-</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title" id="todayTitle">Today's Signals</div>
+            <div id="todaySignals"><div class="no-signals">No signals yet</div></div>
+        </div>
+        <div class="card">
+            <div class="card-title" id="prevTitle">Previous Signals</div>
+            <div id="prevSignals"><div class="no-signals">Loading...</div></div>
+        </div>
+    </div>
+<script>
+const SHEET_ID='1h___rcrQm4hncmA3iTxmJ5SZ_ZW4IvPKAgyFdw76SKI';
+let allPrevSignals=[];
+async function fetchData(){
+    try{
+        const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`);
+        const t=await r.text();
+        const rows=parseCSV(t);
+        if(rows.length>1)processData(rows);
+    }catch(e){
+        console.error(e);
+        document.getElementById('prevSignals').innerHTML='<div class="no-signals">Error loading</div>';
+    }
+}
+function parseCSV(t){
+    return t.trim().split('\n').map(line=>{
+        const res=[];let cell='',inQ=false;
+        for(let i=0;i<line.length;i++){
+            const c=line[i];
+            if(c==='"')inQ=!inQ;
+            else if(c===','&&!inQ){res.push(cell.trim().replace(/^"|"$/g,''));cell='';}
+            else cell+=c;
+        }
+        res.push(cell.trim().replace(/^"|"$/g,''));
+        return res;
+    });
+}
+function processData(rows){
+    const headers=rows[0];
+    const trades=rows.slice(1).map(row=>{const o={};headers.forEach((h,i)=>o[h]=row[i]||'');return o;});
+    const groups={};
+    trades.forEach(t=>{const s=t['Signal #']||'?';if(!groups[s])groups[s]=[];groups[s].push(t);});
+    const signals=Object.entries(groups).map(([n,tr])=>{
+        const pnl=tr.reduce((s,t)=>s+parseFloat(t['Net P/L']||0),0);
+        const w=tr.filter(t=>t['Result']==='WIN').length;
+        const l=tr.filter(t=>t['Result']==='LOSS').length;
+        return{signalNum:parseInt(n)||0,trades:tr,totalPnL:pnl,wins:w,losses:l,direction:tr[0]['Direction'],date:tr[0]['Open Time']?.split(' ')[0]||'',signalResult:pnl>=0?'WIN':'LOSS',tradeCount:tr.length};
+    });
+    signals.sort((a,b)=>b.signalNum-a.signalNum);
+    const tot=signals.length,sW=signals.filter(s=>s.signalResult==='WIN').length,sL=signals.filter(s=>s.signalResult==='LOSS').length;
+    const wr=tot>0?((sW/tot)*100).toFixed(1):0;
+    const totPnL=signals.reduce((s,x)=>s+x.totalPnL,0);
+    const wSigs=signals.filter(s=>s.signalResult==='WIN'),lSigs=signals.filter(s=>s.signalResult==='LOSS');
+    const avgW=wSigs.length?wSigs.reduce((s,x)=>s+x.totalPnL,0)/wSigs.length:0;
+    const avgL=lSigs.length?lSigs.reduce((s,x)=>s+x.totalPnL,0)/lSigs.length:0;
+    document.getElementById('totalSignals').textContent=tot;
+    document.getElementById('totalWins').textContent=sW;
+    document.getElementById('totalLosses').textContent=sL;
+    document.getElementById('winRate').textContent=wr+'%';
+    document.getElementById('winRate').className='stat-value '+(parseFloat(wr)>=50?'positive':'negative');
+    document.getElementById('totalPnL').textContent='$'+totPnL.toFixed(2);
+    document.getElementById('totalPnL').className='stat-value '+(totPnL>=0?'positive':'negative');
+    document.getElementById('avgWin').textContent='$'+avgW.toFixed(2);
+    document.getElementById('avgLoss').textContent='$'+avgL.toFixed(2);
+    document.getElementById('totalTrades').textContent=trades.length;
+    const today=new Date().toISOString().split('T')[0];
+    const todayS=signals.filter(s=>s.date===today);
+    const prevS=signals.filter(s=>s.date!==today);
+    allPrevSignals=prevS;
+    const now=new Date();
+    document.getElementById('lastUpdated').textContent=`Last updated: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()} • Auto-refreshes every 60s`;
+    document.getElementById('todayTitle').textContent=`Today's Signals (${todayS.length} signals, ${todayS.reduce((s,x)=>s+x.tradeCount,0)} trades)`;
+    document.getElementById('todaySignals').innerHTML=todayS.length===0?'<div class="no-signals">No signals yet</div>':todayS.map(renderSignal).join('');
+    document.getElementById('prevTitle').textContent=`Previous Signals (${prevS.length} signals, ${prevS.reduce((s,x)=>s+x.tradeCount,0)} trades)`;
+    renderPrev(5);
+    addClicks();
+}
+function renderPrev(n){
+    const show=allPrevSignals.slice(0,n);
+    let h=show.length===0?'<div class="no-signals">No previous signals</div>':show.map(renderSignal).join('');
+    if(allPrevSignals.length>n)h+=`<button class="show-more-btn" onclick="showAll()">Show All ${allPrevSignals.length} Signals</button>`;
+    document.getElementById('prevSignals').innerHTML=h;
+    addClicks();
+}
+function showAll(){
+    document.getElementById('prevSignals').innerHTML=allPrevSignals.map(renderSignal).join('')+`<button class="show-more-btn" onclick="renderPrev(5)">Show Less</button>`;
+    addClicks();
+}
+function addClicks(){
+    document.querySelectorAll('.signal-row').forEach(row=>{
+        row.onclick=function(){
+            const d=this.nextElementSibling;
+            if(d&&d.classList.contains('trades-detail'))d.classList.toggle('expanded');
+        };
+    });
+}
+function renderSignal(s){
+    const pc=s.totalPnL>=0?'positive':'negative';
+    const dc=s.direction?.toLowerCase()||'';
+    const th=s.trades.map(t=>`<div class="trade-row"><div>${t['Open Time']?.split(' ')[1]||''}</div><div>${parseFloat(t['Lots']||0).toFixed(2)}</div><div>${parseFloat(t['Entry']||0).toFixed(2)}</div><div>${parseFloat(t['Exit']||0).toFixed(2)}</div><div style="color:${t['Result']==='WIN'?'#4ade80':'#f87171'}">${t['Result']}</div><div style="color:${parseFloat(t['Net P/L'])>=0?'#4ade80':'#f87171'}">$${parseFloat(t['Net P/L']||0).toFixed(2)}</div></div>`).join('');
+    return`<div class="signal-row"><div class="signal-id">Signal ${s.signalNum}</div><div class="signal-date">${s.date}</div><div class="signal-direction ${dc}">${s.direction||''}</div><div class="signal-trades">${s.tradeCount} trades</div><div class="signal-result"><span class="wins">${s.wins}W</span><span class="losses">${s.losses}L</span></div><div class="signal-pnl ${pc}">$${s.totalPnL.toFixed(2)} <span class="expand-icon">▼</span></div></div><div class="trades-detail"><div class="trade-row header"><div>Time</div><div>Lots</div><div>Entry</div><div>Exit</div><div>Result</div><div>P/L</div></div>${th}</div>`;
+}
+fetchData();
+setInterval(fetchData,60000);
+</script>
+</body>
+</html>
