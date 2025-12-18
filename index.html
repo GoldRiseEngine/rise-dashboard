@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" href="logo_basic.png">
     <title>Rise Trading Dashboard</title>
     <style>
         * {
@@ -41,20 +41,8 @@
             background-clip: text;
         }
 
-        .logo {
-            text-align: right;
-        }
-
-        .logo-text {
-            font-size: 1.4rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        .logo-tagline {
-            font-size: 0.6rem;
-            letter-spacing: 3px;
-            opacity: 0.7;
+        .logo img {
+            height: 80px;
         }
 
         .last-updated {
@@ -170,6 +158,26 @@
             color: #666;
             padding: 30px;
         }
+
+        .show-more-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.4);
+            border-radius: 8px;
+            color: #667eea;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .show-more-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -177,8 +185,7 @@
         <div class="header">
             <h1>Rise Trading Dashboard</h1>
             <div class="logo">
-                <div class="logo-text">RISE TRADING</div>
-                <div class="logo-tagline">UNITED WE RISE</div>
+                <img src="logo_basic.png" alt="Rise Trading">
             </div>
         </div>
 
@@ -237,6 +244,7 @@
 
     <script>
         const SHEET_ID = '1h___rcrQm4hncmA3iTxmJ5SZ_ZW4IvPKAgyFdw76SKI';
+        let allPrevSignals = [];
 
         async function fetchData() {
             try {
@@ -325,6 +333,7 @@
             const today = new Date().toISOString().split('T')[0];
             const todaySignals = signals.filter(s => s.date === today);
             const prevSignals = signals.filter(s => s.date !== today);
+            allPrevSignals = prevSignals;
 
             const now = new Date();
             document.getElementById('lastUpdated').textContent = `Last updated: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()} • Auto-refreshes every 60s`;
@@ -333,8 +342,31 @@
             document.getElementById('todaySignals').innerHTML = todaySignals.length === 0 ? '<div class="no-signals">No signals yet</div>' : todaySignals.map(renderSignal).join('');
 
             document.getElementById('prevTitle').textContent = `Previous Signals (${prevSignals.length} signals, ${prevSignals.reduce((sum, s) => sum + s.tradeCount, 0)} trades)`;
-            document.getElementById('prevSignals').innerHTML = prevSignals.length === 0 ? '<div class="no-signals">No previous signals</div>' : prevSignals.map(renderSignal).join('');
+            renderPrevSignals(5);
 
+            addClickHandlers();
+        }
+
+        function renderPrevSignals(count) {
+            const toShow = allPrevSignals.slice(0, count);
+            const hasMore = allPrevSignals.length > count;
+            
+            let html = toShow.length === 0 ? '<div class="no-signals">No previous signals</div>' : toShow.map(renderSignal).join('');
+            
+            if (hasMore) {
+                html += `<button class="show-more-btn" onclick="showAllPrevSignals()">Show All ${allPrevSignals.length} Signals</button>`;
+            }
+            
+            document.getElementById('prevSignals').innerHTML = html;
+            addClickHandlers();
+        }
+
+        function showAllPrevSignals() {
+            document.getElementById('prevSignals').innerHTML = allPrevSignals.map(renderSignal).join('');
+            addClickHandlers();
+        }
+
+        function addClickHandlers() {
             document.querySelectorAll('.signal-row').forEach(row => {
                 row.addEventListener('click', () => {
                     const detail = row.nextElementSibling;
