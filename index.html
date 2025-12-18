@@ -45,10 +45,6 @@
             text-align: right;
         }
 
-        .logo img {
-            height: 60px;
-        }
-
         .logo-text {
             font-size: 1.4rem;
             font-weight: bold;
@@ -116,16 +112,9 @@
         .stat-value.negative { color: #f87171; }
         .stat-value.neutral { color: #60a5fa; }
 
-        .signals-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
         .signal-row {
             display: grid;
-            grid-template-columns: 100px 100px 80px 80px 1fr 100px;
+            grid-template-columns: 100px 100px 80px 80px 1fr 120px;
             gap: 15px;
             padding: 12px 15px;
             background: rgba(255, 255, 255, 0.03);
@@ -140,56 +129,18 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        @media (max-width: 768px) {
-            .signal-row {
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 10px;
-            }
-        }
-
-        .signal-id {
-            font-weight: 600;
-            color: #a78bfa;
-        }
-
-        .signal-date {
-            color: #888;
-            font-size: 0.9rem;
-        }
-
-        .signal-direction {
-            font-weight: 600;
-        }
-
+        .signal-id { font-weight: 600; color: #a78bfa; }
+        .signal-date { color: #888; font-size: 0.9rem; }
+        .signal-direction { font-weight: 600; }
         .signal-direction.buy { color: #4ade80; }
         .signal-direction.sell { color: #f87171; }
-
-        .signal-trades {
-            color: #888;
-            font-size: 0.9rem;
-        }
-
-        .signal-result {
-            display: flex;
-            gap: 10px;
-            font-size: 0.85rem;
-        }
-
+        .signal-trades { color: #888; font-size: 0.9rem; }
+        .signal-result { display: flex; gap: 10px; font-size: 0.85rem; }
         .signal-result .wins { color: #4ade80; }
         .signal-result .losses { color: #f87171; }
-
-        .signal-pnl {
-            font-weight: 700;
-            text-align: right;
-        }
-
+        .signal-pnl { font-weight: 700; text-align: right; }
         .signal-pnl.positive { color: #4ade80; }
         .signal-pnl.negative { color: #f87171; }
-
-        .expand-icon {
-            color: #888;
-            font-size: 0.8rem;
-        }
 
         .trades-detail {
             display: none;
@@ -199,9 +150,7 @@
             padding: 15px;
         }
 
-        .trades-detail.expanded {
-            display: block;
-        }
+        .trades-detail.expanded { display: block; }
 
         .trade-row {
             display: grid;
@@ -213,31 +162,13 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .trade-row:last-child {
-            border-bottom: none;
-        }
-
-        .trade-row.header {
-            color: #666;
-            font-weight: 600;
-        }
-
-        .section-title {
-            font-size: 0.9rem;
-            color: #888;
-            margin-bottom: 10px;
-        }
+        .trade-row:last-child { border-bottom: none; }
+        .trade-row.header { color: #666; font-weight: 600; }
 
         .no-signals {
             text-align: center;
             color: #666;
             padding: 30px;
-        }
-
-        .loading {
-            text-align: center;
-            color: #888;
-            padding: 50px;
         }
     </style>
 </head>
@@ -294,173 +225,127 @@
         </div>
 
         <div class="card">
-            <div class="signals-header">
-                <div class="card-title" id="todayTitle">Today's Signals</div>
-            </div>
-            <div id="todaySignals">
-                <div class="no-signals">No signals yet</div>
-            </div>
+            <div class="card-title" id="todayTitle">Today's Signals</div>
+            <div id="todaySignals"><div class="no-signals">No signals yet</div></div>
         </div>
 
         <div class="card">
-            <div class="signals-header">
-                <div class="card-title" id="prevTitle">Previous Signals</div>
-            </div>
-            <div id="prevSignals">
-                <div class="loading">Loading signals...</div>
-            </div>
+            <div class="card-title" id="prevTitle">Previous Signals</div>
+            <div id="prevSignals"><div class="no-signals">Loading...</div></div>
         </div>
     </div>
 
     <script>
         const SHEET_ID = '1h___rcrQm4hncmA3iTxmJ5SZ_ZW4IvPKAgyFdw76SKI';
-        const API_KEY = 'AIzaSyDMqEWKPrzhLaYWVHqq7YPBz-mLR5xpJPk';
-        const RANGE = 'Sheet1!A:Q';
 
         async function fetchData() {
             try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`;
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
                 const response = await fetch(url);
-                const data = await response.json();
-                
-                if (data.values && data.values.length > 1) {
-                    processData(data.values);
-                }
+                const csvText = await response.text();
+                const rows = parseCSV(csvText);
+                if (rows.length > 1) processData(rows);
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error:', error);
                 document.getElementById('prevSignals').innerHTML = '<div class="no-signals">Error loading data</div>';
             }
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            return lines.map(line => {
+                const result = [];
+                let cell = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === ',' && !inQuotes) { result.push(cell.trim().replace(/^"|"$/g, '')); cell = ''; }
+                    else cell += char;
+                }
+                result.push(cell.trim().replace(/^"|"$/g, ''));
+                return result;
+            });
         }
 
         function processData(rows) {
             const headers = rows[0];
             const trades = rows.slice(1).map(row => {
                 const obj = {};
-                headers.forEach((header, i) => {
-                    obj[header] = row[i] || '';
-                });
+                headers.forEach((h, i) => obj[h] = row[i] || '');
                 return obj;
             });
 
-            // Group trades by Signal #
             const signalGroups = {};
             trades.forEach(trade => {
-                const signalNum = trade['Signal #'] || 'Unknown';
-                if (!signalGroups[signalNum]) {
-                    signalGroups[signalNum] = [];
-                }
-                signalGroups[signalNum].push(trade);
+                const sig = trade['Signal #'] || 'Unknown';
+                if (!signalGroups[sig]) signalGroups[sig] = [];
+                signalGroups[sig].push(trade);
             });
 
-            // Calculate signal-level stats
             const signals = Object.entries(signalGroups).map(([signalNum, signalTrades]) => {
                 const totalPnL = signalTrades.reduce((sum, t) => sum + parseFloat(t['Net P/L'] || 0), 0);
                 const wins = signalTrades.filter(t => t['Result'] === 'WIN').length;
                 const losses = signalTrades.filter(t => t['Result'] === 'LOSS').length;
                 const direction = signalTrades[0]['Direction'];
                 const date = signalTrades[0]['Open Time']?.split(' ')[0] || '';
-                const datetime = signalTrades[0]['Open Time'] || '';
-                
-                // Signal is a WIN if net P/L is positive, LOSS if negative
-                const signalResult = totalPnL >= 0 ? 'WIN' : 'LOSS';
-                
                 return {
                     signalNum: parseInt(signalNum) || 0,
                     trades: signalTrades,
-                    totalPnL,
-                    wins,
-                    losses,
-                    direction,
-                    date,
-                    datetime,
-                    signalResult,
+                    totalPnL, wins, losses, direction, date,
+                    signalResult: totalPnL >= 0 ? 'WIN' : 'LOSS',
                     tradeCount: signalTrades.length
                 };
             });
 
-            // Sort by signal number descending
             signals.sort((a, b) => b.signalNum - a.signalNum);
 
-            // Calculate overall stats
             const totalSignals = signals.length;
             const signalWins = signals.filter(s => s.signalResult === 'WIN').length;
             const signalLosses = signals.filter(s => s.signalResult === 'LOSS').length;
             const winRate = totalSignals > 0 ? ((signalWins / totalSignals) * 100).toFixed(1) : 0;
             const totalPnL = signals.reduce((sum, s) => sum + s.totalPnL, 0);
-            const totalTradeCount = trades.length;
 
             const winningSignals = signals.filter(s => s.signalResult === 'WIN');
             const losingSignals = signals.filter(s => s.signalResult === 'LOSS');
-            const avgWin = winningSignals.length > 0 
-                ? winningSignals.reduce((sum, s) => sum + s.totalPnL, 0) / winningSignals.length 
-                : 0;
-            const avgLoss = losingSignals.length > 0 
-                ? losingSignals.reduce((sum, s) => sum + s.totalPnL, 0) / losingSignals.length 
-                : 0;
+            const avgWin = winningSignals.length > 0 ? winningSignals.reduce((sum, s) => sum + s.totalPnL, 0) / winningSignals.length : 0;
+            const avgLoss = losingSignals.length > 0 ? losingSignals.reduce((sum, s) => sum + s.totalPnL, 0) / losingSignals.length : 0;
 
-            // Update stats display
             document.getElementById('totalSignals').textContent = totalSignals;
             document.getElementById('totalWins').textContent = signalWins;
             document.getElementById('totalLosses').textContent = signalLosses;
             document.getElementById('winRate').textContent = winRate + '%';
             document.getElementById('winRate').className = 'stat-value ' + (parseFloat(winRate) >= 50 ? 'positive' : 'negative');
-            
             document.getElementById('totalPnL').textContent = '$' + totalPnL.toFixed(2);
             document.getElementById('totalPnL').className = 'stat-value ' + (totalPnL >= 0 ? 'positive' : 'negative');
-            
             document.getElementById('avgWin').textContent = '$' + avgWin.toFixed(2);
             document.getElementById('avgLoss').textContent = '$' + avgLoss.toFixed(2);
-            document.getElementById('totalTrades').textContent = totalTradeCount;
+            document.getElementById('totalTrades').textContent = trades.length;
 
-            // Split into today and previous
             const today = new Date().toISOString().split('T')[0];
             const todaySignals = signals.filter(s => s.date === today);
             const prevSignals = signals.filter(s => s.date !== today);
 
-            // Update timestamp
             const now = new Date();
-            document.getElementById('lastUpdated').textContent = 
-                `Last updated: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()} • Auto-refreshes every 60s`;
+            document.getElementById('lastUpdated').textContent = `Last updated: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()} • Auto-refreshes every 60s`;
 
-            // Render today's signals
-            document.getElementById('todayTitle').textContent = 
-                `Today's Signals (${todaySignals.length} signals, ${todaySignals.reduce((sum, s) => sum + s.tradeCount, 0)} trades)`;
-            
-            if (todaySignals.length === 0) {
-                document.getElementById('todaySignals').innerHTML = '<div class="no-signals">No signals yet</div>';
-            } else {
-                document.getElementById('todaySignals').innerHTML = todaySignals.map(s => renderSignal(s)).join('');
-            }
+            document.getElementById('todayTitle').textContent = `Today's Signals (${todaySignals.length} signals, ${todaySignals.reduce((sum, s) => sum + s.tradeCount, 0)} trades)`;
+            document.getElementById('todaySignals').innerHTML = todaySignals.length === 0 ? '<div class="no-signals">No signals yet</div>' : todaySignals.map(renderSignal).join('');
 
-            // Render previous signals
-            document.getElementById('prevTitle').textContent = 
-                `Previous Signals (${prevSignals.length} signals, ${prevSignals.reduce((sum, s) => sum + s.tradeCount, 0)} trades)`;
-            
-            if (prevSignals.length === 0) {
-                document.getElementById('prevSignals').innerHTML = '<div class="no-signals">No previous signals</div>';
-            } else {
-                document.getElementById('prevSignals').innerHTML = prevSignals.map(s => renderSignal(s)).join('');
-            }
+            document.getElementById('prevTitle').textContent = `Previous Signals (${prevSignals.length} signals, ${prevSignals.reduce((sum, s) => sum + s.tradeCount, 0)} trades)`;
+            document.getElementById('prevSignals').innerHTML = prevSignals.length === 0 ? '<div class="no-signals">No previous signals</div>' : prevSignals.map(renderSignal).join('');
 
-            // Add click handlers for expanding
             document.querySelectorAll('.signal-row').forEach(row => {
                 row.addEventListener('click', () => {
                     const detail = row.nextElementSibling;
-                    if (detail && detail.classList.contains('trades-detail')) {
-                        detail.classList.toggle('expanded');
-                        const icon = row.querySelector('.expand-icon');
-                        if (icon) {
-                            icon.textContent = detail.classList.contains('expanded') ? '▲' : '▼';
-                        }
-                    }
+                    if (detail?.classList.contains('trades-detail')) detail.classList.toggle('expanded');
                 });
             });
         }
 
         function renderSignal(signal) {
             const pnlClass = signal.totalPnL >= 0 ? 'positive' : 'negative';
-            const dirClass = signal.direction.toLowerCase();
-            
+            const dirClass = signal.direction?.toLowerCase() || '';
             const tradesHtml = signal.trades.map(t => `
                 <div class="trade-row">
                     <div>${t['Open Time']?.split(' ')[1] || ''}</div>
@@ -476,5 +361,20 @@
                 <div class="signal-row">
                     <div class="signal-id">Signal ${signal.signalNum}</div>
                     <div class="signal-date">${signal.date}</div>
-                    <div class="signal-direction ${dirClass}">${signal.direction}</div>
+                    <div class="signal-direction ${dirClass}">${signal.direction || ''}</div>
                     <div class="signal-trades">${signal.tradeCount} trades</div>
+                    <div class="signal-result"><span class="wins">${signal.wins}W</span><span class="losses">${signal.losses}L</span></div>
+                    <div class="signal-pnl ${pnlClass}">$${signal.totalPnL.toFixed(2)} ▼</div>
+                </div>
+                <div class="trades-detail">
+                    <div class="trade-row header"><div>Time</div><div>Lots</div><div>Entry</div><div>Exit</div><div>Result</div><div>P/L</div></div>
+                    ${tradesHtml}
+                </div>
+            `;
+        }
+
+        fetchData();
+        setInterval(fetchData, 60000);
+    </script>
+</body>
+</html>
