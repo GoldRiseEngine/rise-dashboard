@@ -123,7 +123,6 @@
             font-size: 0.7rem;
             font-weight: 600;
             color: var(--green);
-            margin-bottom: 0.5rem;
         }
 
         .status-dot {
@@ -131,6 +130,38 @@
             background: var(--green);
             border-radius: 50%;
             animation: pulse 2s infinite;
+        }
+
+        .badges-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .myfxbook-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 100px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #4CAF50;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .myfxbook-badge:hover {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .myfxbook-badge svg {
+            width: 12px;
+            height: 12px;
         }
 
         @keyframes pulse {
@@ -360,7 +391,16 @@
             </div>
             <div class="header-right">
                 <div class="header-info">
-                    <div class="status-badge"><span class="status-dot"></span>LIVE</div>
+                    <div class="badges-row">
+                        <div class="status-badge"><span class="status-dot"></span>LIVE</div>
+                        <a href="https://www.myfxbook.com/portfolio/gold-rise-engine/11849286" target="_blank" class="myfxbook-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M9 12l2 2 4-4"/>
+                                <circle cx="12" cy="12" r="10"/>
+                            </svg>
+                            MYFXBOOK VERIFIED
+                        </a>
+                    </div>
                     <div class="last-updated" id="lastUpdated">Loading...</div>
                 </div>
                 <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">
