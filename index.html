@@ -375,13 +375,12 @@ function formatDateCT(str){
 
 function formatTimeCT(str){
     if(!str)return'';
-    const p=str.replace(/\./g,'-').split(/[-\s:]/);
+    var p=str.replace(/\./g,'-').split(/-| |:/);
     if(p.length>=5){
-        const utc=Date.UTC(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),parseInt(p[3])||0,parseInt(p[4])||0);
+        var utc=Date.UTC(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),parseInt(p[3])||0,parseInt(p[4])||0);
         return new Date(utc).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE});
     }
     return'';
-}
 }
 
 async function fetchData(){
