@@ -348,134 +348,181 @@
     </div>
 
 <script>
-const SHEET_ID='1h___rcrQm4hncmA3iTxmJ5SZ_ZW4IvPKAgyFdw76SKI';
-const TIMEZONE='America/Chicago';
-let allPrevSignals=[];
+var SHEET_ID = '1h___rcrQm4hncmA3iTxmJ5SZ_ZW4IvPKAgyFdw76SKI';
+var TIMEZONE = 'America/Chicago';
+var allPrevSignals = [];
 
-function getCentralDate(){return new Date().toLocaleDateString('en-CA',{timeZone:TIMEZONE});}
-
-function parseDate(str){
-    if(!str)return null;
-    try{
-        let s=str.replace(/\./g,'-');
-        const p=s.split(/[-\s:]/);
-        if(p[0].length===4){
-            const d=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),parseInt(p[3])||0,parseInt(p[4])||0,parseInt(p[5])||0);
-            return isNaN(d)?null:d;
-        }
-        return null;
-    }catch{return null;}
+function getCentralDate() {
+    return new Date().toLocaleDateString('en-CA', {timeZone: TIMEZONE});
 }
 
-function formatDateCT(str){
-    const d=parseDate(str);
-    if(!d)return str?str.split(' ')[0].replace(/\./g,'-'):'';
-    return d.toLocaleDateString('en-CA',{timeZone:TIMEZONE});
-}
-
-function formatTimeCT(str){
-    if(!str)return'';
-    var p=str.replace(/\./g,'-').split(/-| |:/);
-    if(p.length>=5){
-        var utc=Date.UTC(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]),parseInt(p[3])||0,parseInt(p[4])||0);
-        return new Date(utc).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE});
+function formatDateCT(str) {
+    if (!str) return '';
+    var s = str.replace(/\./g, '-');
+    var p = s.split(/-| |:/);
+    if (p.length >= 3 && p[0].length === 4) {
+        var utc = Date.UTC(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]), parseInt(p[3]) || 0, parseInt(p[4]) || 0);
+        return new Date(utc).toLocaleDateString('en-CA', {timeZone: TIMEZONE});
     }
-    return'';
+    return str.split(' ')[0].replace(/\./g, '-');
 }
 
-async function fetchData(){
-    try{
-        const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`);
-        const t=await r.text();
-        const rows=parseCSV(t);
-        if(rows.length>1)processData(rows);
-    }catch(e){console.error(e);document.getElementById('prevSignals').innerHTML='<div class="no-signals">Error loading data</div>';}
+function formatTimeCT(str) {
+    if (!str) return '';
+    var s = str.replace(/\./g, '-');
+    var p = s.split(/-| |:/);
+    if (p.length >= 5) {
+        var utc = Date.UTC(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]), parseInt(p[3]) || 0, parseInt(p[4]) || 0);
+        return new Date(utc).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', timeZone: TIMEZONE});
+    }
+    return '';
 }
 
-function parseCSV(t){
-    return t.trim().split('\n').map(line=>{
-        const res=[];let cell='',inQ=false;
-        for(let i=0;i<line.length;i++){const c=line[i];if(c==='"')inQ=!inQ;else if(c===','&&!inQ){res.push(cell.trim().replace(/^"|"$/g,''));cell='';}else cell+=c;}
-        res.push(cell.trim().replace(/^"|"$/g,''));
+async function fetchData() {
+    try {
+        var r = await fetch('https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv');
+        var t = await r.text();
+        var rows = parseCSV(t);
+        if (rows.length > 1) processData(rows);
+    } catch(e) {
+        console.error(e);
+        document.getElementById('prevSignals').innerHTML = '<div class="no-signals">Error loading data</div>';
+    }
+}
+
+function parseCSV(t) {
+    return t.trim().split('\n').map(function(line) {
+        var res = [];
+        var cell = '';
+        var inQ = false;
+        for (var i = 0; i < line.length; i++) {
+            var c = line[i];
+            if (c === '"') inQ = !inQ;
+            else if (c === ',' && !inQ) {
+                res.push(cell.trim().replace(/^"|"$/g, ''));
+                cell = '';
+            } else cell += c;
+        }
+        res.push(cell.trim().replace(/^"|"$/g, ''));
         return res;
     });
 }
 
-function processData(rows){
-    const headers=rows[0];
-    const trades=rows.slice(1).map(row=>{const o={};headers.forEach((h,i)=>o[h]=row[i]||'');return o;});
-    const groups={};
-    trades.forEach(t=>{const s=t['Signal #']||'?';if(!groups[s])groups[s]=[];groups[s].push(t);});
-
-    const signals=Object.entries(groups).map(([n,tr])=>{
-        const pnl=tr.reduce((s,t)=>s+parseFloat(t['Net P/L']||0),0);
-        const w=tr.filter(t=>t['Result']==='WIN').length;
-        const l=tr.filter(t=>t['Result']==='LOSS').length;
-        const openTime=tr[0]['Open Time']||'';
-        const dateCT=formatDateCT(openTime);
-        return{signalNum:parseInt(n)||0,trades:tr,totalPnL:pnl,wins:w,losses:l,direction:tr[0]['Direction'],date:dateCT,openTime:openTime,signalResult:pnl>=0?'WIN':'LOSS',tradeCount:tr.length};
+function processData(rows) {
+    var headers = rows[0];
+    var trades = rows.slice(1).map(function(row) {
+        var o = {};
+        headers.forEach(function(h, i) { o[h] = row[i] || ''; });
+        return o;
+    });
+    
+    var groups = {};
+    trades.forEach(function(t) {
+        var s = t['Signal #'] || '?';
+        if (!groups[s]) groups[s] = [];
+        groups[s].push(t);
     });
 
-    signals.sort((a,b)=>b.signalNum-a.signalNum);
-    const tot=signals.length,sW=signals.filter(s=>s.signalResult==='WIN').length,sL=signals.filter(s=>s.signalResult==='LOSS').length;
-    const wr=tot>0?((sW/tot)*100).toFixed(1):0;
-    const totPnL=signals.reduce((s,x)=>s+x.totalPnL,0);
-    const wSigs=signals.filter(s=>s.signalResult==='WIN'),lSigs=signals.filter(s=>s.signalResult==='LOSS');
-    const avgW=wSigs.length?wSigs.reduce((s,x)=>s+x.totalPnL,0)/wSigs.length:0;
-    const avgL=lSigs.length?lSigs.reduce((s,x)=>s+x.totalPnL,0)/lSigs.length:0;
-    const bestSig=signals.length?Math.max(...signals.map(s=>s.totalPnL)):0;
-    const worstSig=signals.length?Math.min(...signals.map(s=>s.totalPnL)):0;
+    var signals = Object.entries(groups).map(function(entry) {
+        var n = entry[0];
+        var tr = entry[1];
+        var pnl = tr.reduce(function(s, t) { return s + parseFloat(t['Net P/L'] || 0); }, 0);
+        var w = tr.filter(function(t) { return t['Result'] === 'WIN'; }).length;
+        var l = tr.filter(function(t) { return t['Result'] === 'LOSS'; }).length;
+        var openTime = tr[0]['Open Time'] || '';
+        var dateCT = formatDateCT(openTime);
+        return {
+            signalNum: parseInt(n) || 0,
+            trades: tr,
+            totalPnL: pnl,
+            wins: w,
+            losses: l,
+            direction: tr[0]['Direction'],
+            date: dateCT,
+            openTime: openTime,
+            signalResult: pnl >= 0 ? 'WIN' : 'LOSS',
+            tradeCount: tr.length
+        };
+    });
 
-    document.getElementById('totalSignals').textContent=tot;
-    document.getElementById('totalWins').textContent=sW;
-    document.getElementById('totalLosses').textContent=sL;
-    document.getElementById('winRate').textContent=wr+'%';
-    document.getElementById('winRate').className='stat-value '+(parseFloat(wr)>=50?'primary':'negative');
-    document.getElementById('totalPnL').textContent='$'+totPnL.toFixed(2);
-    document.getElementById('totalPnL').className='stat-value '+(totPnL>=0?'positive':'negative');
-    document.getElementById('avgWin').textContent='$'+avgW.toFixed(2);
-    document.getElementById('avgLoss').textContent='$'+avgL.toFixed(2);
-    document.getElementById('bestSignal').textContent='$'+bestSig.toFixed(2);
-    document.getElementById('worstSignal').textContent='$'+worstSig.toFixed(2);
-    document.getElementById('totalTrades').textContent=trades.length;
+    signals.sort(function(a, b) { return b.signalNum - a.signalNum; });
+    
+    var tot = signals.length;
+    var sW = signals.filter(function(s) { return s.signalResult === 'WIN'; }).length;
+    var sL = signals.filter(function(s) { return s.signalResult === 'LOSS'; }).length;
+    var wr = tot > 0 ? ((sW / tot) * 100).toFixed(1) : 0;
+    var totPnL = signals.reduce(function(s, x) { return s + x.totalPnL; }, 0);
+    var wSigs = signals.filter(function(s) { return s.signalResult === 'WIN'; });
+    var lSigs = signals.filter(function(s) { return s.signalResult === 'LOSS'; });
+    var avgW = wSigs.length ? wSigs.reduce(function(s, x) { return s + x.totalPnL; }, 0) / wSigs.length : 0;
+    var avgL = lSigs.length ? lSigs.reduce(function(s, x) { return s + x.totalPnL; }, 0) / lSigs.length : 0;
+    var bestSig = signals.length ? Math.max.apply(null, signals.map(function(s) { return s.totalPnL; })) : 0;
+    var worstSig = signals.length ? Math.min.apply(null, signals.map(function(s) { return s.totalPnL; })) : 0;
 
-    const today=getCentralDate();
-    const todayS=signals.filter(s=>s.date===today);
-    const prevS=signals.filter(s=>s.date!==today);
-    allPrevSignals=prevS;
+    document.getElementById('totalSignals').textContent = tot;
+    document.getElementById('totalWins').textContent = sW;
+    document.getElementById('totalLosses').textContent = sL;
+    document.getElementById('winRate').textContent = wr + '%';
+    document.getElementById('winRate').className = 'stat-value ' + (parseFloat(wr) >= 50 ? 'primary' : 'negative');
+    document.getElementById('totalPnL').textContent = '$' + totPnL.toFixed(2);
+    document.getElementById('totalPnL').className = 'stat-value ' + (totPnL >= 0 ? 'positive' : 'negative');
+    document.getElementById('avgWin').textContent = '$' + avgW.toFixed(2);
+    document.getElementById('avgLoss').textContent = '$' + avgL.toFixed(2);
+    document.getElementById('bestSignal').textContent = '$' + bestSig.toFixed(2);
+    document.getElementById('worstSignal').textContent = '$' + worstSig.toFixed(2);
+    document.getElementById('totalTrades').textContent = trades.length;
 
-    document.getElementById('lastUpdated').textContent=new Date().toLocaleString('en-US',{timeZone:TIMEZONE,month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'})+' CT';
-    document.getElementById('todayCount').textContent=todayS.length+' signals • '+todayS.reduce((s,x)=>s+x.tradeCount,0)+' trades';
-    document.getElementById('todaySignals').innerHTML=todayS.length===0?'<div class="no-signals">No signals yet today</div>':todayS.map(renderSignal).join('');
-    document.getElementById('prevCount').textContent=prevS.length+' signals • '+prevS.reduce((s,x)=>s+x.tradeCount,0)+' trades';
+    var today = getCentralDate();
+    var todayS = signals.filter(function(s) { return s.date === today; });
+    var prevS = signals.filter(function(s) { return s.date !== today; });
+    allPrevSignals = prevS;
+
+    document.getElementById('lastUpdated').textContent = new Date().toLocaleString('en-US', {timeZone: TIMEZONE, month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'}) + ' CT';
+    document.getElementById('todayCount').textContent = todayS.length + ' signals • ' + todayS.reduce(function(s, x) { return s + x.tradeCount; }, 0) + ' trades';
+    document.getElementById('todaySignals').innerHTML = todayS.length === 0 ? '<div class="no-signals">No signals yet today</div>' : todayS.map(renderSignal).join('');
+    document.getElementById('prevCount').textContent = prevS.length + ' signals • ' + prevS.reduce(function(s, x) { return s + x.tradeCount; }, 0) + ' trades';
     renderPrev(5);
     addClicks();
 }
 
-function renderPrev(n){
-    const show=allPrevSignals.slice(0,n);
-    let h=show.length===0?'<div class="no-signals">No previous signals</div>':show.map(renderSignal).join('');
-    if(allPrevSignals.length>n)h+=`<button class="show-more-btn" onclick="showAll()">Show All ${allPrevSignals.length} Signals ↓</button>`;
-    document.getElementById('prevSignals').innerHTML=h;
+function renderPrev(n) {
+    var show = allPrevSignals.slice(0, n);
+    var h = show.length === 0 ? '<div class="no-signals">No previous signals</div>' : show.map(renderSignal).join('');
+    if (allPrevSignals.length > n) h += '<button class="show-more-btn" onclick="showAll()">Show All ' + allPrevSignals.length + ' Signals ↓</button>';
+    document.getElementById('prevSignals').innerHTML = h;
     addClicks();
 }
 
-function showAll(){
-    document.getElementById('prevSignals').innerHTML=allPrevSignals.map(renderSignal).join('')+`<button class="show-more-btn" onclick="renderPrev(5)">Show Less ↑</button>`;
+function showAll() {
+    document.getElementById('prevSignals').innerHTML = allPrevSignals.map(renderSignal).join('') + '<button class="show-more-btn" onclick="renderPrev(5)">Show Less ↑</button>';
     addClicks();
 }
 
-function addClicks(){document.querySelectorAll('.signal-row').forEach(row=>{row.onclick=function(){const d=this.nextElementSibling;if(d&&d.classList.contains('trades-detail')){d.classList.toggle('expanded');this.classList.toggle('expanded');}}});}
+function addClicks() {
+    document.querySelectorAll('.signal-row').forEach(function(row) {
+        row.onclick = function() {
+            var d = this.nextElementSibling;
+            if (d && d.classList.contains('trades-detail')) {
+                d.classList.toggle('expanded');
+                this.classList.toggle('expanded');
+            }
+        };
+    });
+}
 
-function renderSignal(s){
-    const pc=s.totalPnL>=0?'positive':'negative';
-    const dc=s.direction?.toLowerCase()||'';
-    const th=s.trades.map(t=>{const time=formatTimeCT(t['Open Time']);const pnl=parseFloat(t['Net P/L']||0);return`<div class="trade-row"><div>${time}</div><div>${parseFloat(t['Lots']||0).toFixed(2)}</div><div>${parseFloat(t['Entry']||0).toFixed(2)}</div><div>${parseFloat(t['Exit']||0).toFixed(2)}</div><div style="color:${t['Result']==='WIN'?'var(--green)':'var(--red)'}">${t['Result']}</div><div style="color:${pnl>=0?'var(--green)':'var(--red)'}">$${pnl.toFixed(2)}</div></div>`;}).join('');
-    return`<div class="signal-row"><div class="signal-id">#${s.signalNum}</div><div class="signal-date">${s.date}</div><div class="signal-direction ${dc}">${s.direction||''}</div><div class="signal-trades">${s.tradeCount} trades</div><div class="signal-result"><span class="wins">${s.wins}W</span><span class="losses">${s.losses}L</span></div><div class="signal-pnl ${pc}">$${s.totalPnL.toFixed(2)} <span class="expand-icon">▼</span></div></div><div class="trades-detail"><div class="trade-row header"><div>Time</div><div>Lots</div><div>Entry</div><div>Exit</div><div>Result</div><div>P/L</div></div>${th}</div>`;
+function renderSignal(s) {
+    var pc = s.totalPnL >= 0 ? 'positive' : 'negative';
+    var dc = s.direction ? s.direction.toLowerCase() : '';
+    var th = s.trades.map(function(t) {
+        var time = formatTimeCT(t['Open Time']);
+        var pnl = parseFloat(t['Net P/L'] || 0);
+        return '<div class="trade-row"><div>' + time + '</div><div>' + parseFloat(t['Lots'] || 0).toFixed(2) + '</div><div>' + parseFloat(t['Entry'] || 0).toFixed(2) + '</div><div>' + parseFloat(t['Exit'] || 0).toFixed(2) + '</div><div style="color:' + (t['Result'] === 'WIN' ? 'var(--green)' : 'var(--red)') + '">' + t['Result'] + '</div><div style="color:' + (pnl >= 0 ? 'var(--green)' : 'var(--red)') + '">$' + pnl.toFixed(2) + '</div></div>';
+    }).join('');
+    return '<div class="signal-row"><div class="signal-id">#' + s.signalNum + '</div><div class="signal-date">' + s.date + '</div><div class="signal-direction ' + dc + '">' + (s.direction || '') + '</div><div class="signal-trades">' + s.tradeCount + ' trades</div><div class="signal-result"><span class="wins">' + s.wins + 'W</span><span class="losses">' + s.losses + 'L</span></div><div class="signal-pnl ' + pc + '">$' + s.totalPnL.toFixed(2) + ' <span class="expand-icon">▼</span></div></div><div class="trades-detail"><div class="trade-row header"><div>Time</div><div>Lots</div><div>Entry</div><div>Exit</div><div>Result</div><div>P/L</div></div>' + th + '</div>';
 }
 
 fetchData();
-setInterval(fetchData,60000);
+setInterval(fetchData, 60000);
 </script>
 </body>
 </html>
